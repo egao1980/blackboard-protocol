@@ -4,6 +4,7 @@
   :author "egao1980"
   :license "MIT"
   :depends-on ("bordeaux-threads")
+  :properties (:cl-repo (:ci (:with ("capability-protocol") :sources (("bordeaux-threads" :ql) ("rove" :ql)))))
   :serial t
   :pathname "src"
   :components ((:file "package")
