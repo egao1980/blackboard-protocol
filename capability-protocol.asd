@@ -17,8 +17,7 @@
   :depends-on ("capability-protocol" "rove")
   :pathname "tests"
   :serial t
-  :components ((:file "package")
-               (:file "helpers")
+  :components ((:file "capability-package")
                (:file "capability-test"))
   :perform (test-op (o c)
              (unless (symbol-call :rove :run c)

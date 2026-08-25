@@ -1,7 +1,7 @@
 (defpackage #:blackboard-protocol
   (:use #:cl)
   (:nicknames #:stack-blackboard)
-  (:local-nicknames (#:bt2 #:org.shirakumo.bordeaux-threads))
+  (:local-nicknames (#:bt2 #:bordeaux-threads))
   (:export
    ;; conditions
    #:blackboard-error

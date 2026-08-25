@@ -1,5 +1,17 @@
 (in-package #:blackboard-protocol)
 
+(defun make-bb-lock (&optional name)
+  "Portable lock ctor: BT2 uses &key NAME; classic BT uses an optional name."
+  (handler-case (apply #'bt2:make-lock (and name (list :name name)))
+    (error ()
+      (if name (bt2:make-lock name) (bt2:make-lock)))))
+
+(defun make-bb-cv (&optional name)
+  "Portable condition-variable ctor."
+  (handler-case (apply #'bt2:make-condition-variable (and name (list :name name)))
+    (error ()
+      (bt2:make-condition-variable))))
+
 (defvar *ksar-counter* 0)
 
 (defclass watcher ()
@@ -70,24 +82,24 @@
 
 (defclass blackboard ()
   ((sections :initform (make-hash-table :test 'eq) :reader blackboard-sections)
-   (lock :initform (bt2:make-lock :name "blackboard") :reader blackboard-lock)
+   (lock :initform (make-bb-lock "blackboard") :reader blackboard-lock)
    (capabilities :initform (make-hash-table :test 'eq) :accessor blackboard-capabilities)
    (workspaces :initform (make-hash-table :test 'equal) :accessor blackboard-workspaces)
    (ks-registry :initform (make-hash-table :test 'equal) :accessor blackboard-ks-registry)
    (watchers :initform (make-hash-table :test 'eq) :accessor bb-watchers)
    (watchers-order :initform nil :accessor bb-watchers-order)
-   (watchers-lock :initform (bt2:make-lock :name "bb-watchers") :reader bb-watchers-lock)
+   (watchers-lock :initform (make-bb-lock "bb-watchers") :reader bb-watchers-lock)
    (agenda :initform (make-pqueue) :accessor bb-agenda)
-   (agenda-lock :initform (bt2:make-lock :name "bb-agenda") :reader bb-agenda-lock)
-   (agenda-cv :initform (bt2:make-condition-variable :name "bb-agenda-cv")
+   (agenda-lock :initform (make-bb-lock "bb-agenda") :reader bb-agenda-lock)
+   (agenda-cv :initform (make-bb-cv "bb-agenda-cv")
               :reader bb-agenda-cv)
    (scheduler-running :initform nil :accessor scheduler-running-p)
    (scheduler-thread :initform nil :accessor bb-scheduler-thread)
    (max-concurrency :initarg :max-concurrency :initform 4
                     :accessor blackboard-max-concurrency)
    (active-count :initform 0 :accessor bb-active-count)
-   (active-lock :initform (bt2:make-lock :name "bb-active") :reader bb-active-lock)
-   (active-cv :initform (bt2:make-condition-variable :name "bb-active-cv")
+   (active-lock :initform (make-bb-lock "bb-active") :reader bb-active-lock)
+   (active-cv :initform (make-bb-cv "bb-active-cv")
               :reader bb-active-cv)
    (running-workspaces :initform (make-hash-table :test 'eq)
                        :reader bb-running-workspaces)

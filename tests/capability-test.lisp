@@ -1,4 +1,4 @@
-(in-package #:blackboard-protocol/tests)
+(in-package #:capability-protocol/tests)
 
 (deftest defcapability-and-portable-invoke
   (let ((cap (make-instance 'code-editing-capability)))

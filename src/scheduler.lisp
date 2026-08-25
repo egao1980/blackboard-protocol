@@ -99,6 +99,8 @@
                   (bt2:condition-wait (bb-active-cv root)
                                       (bb-agenda-lock root)
                                       :timeout 0.1))
+                 ((plusp (pqueue-size (bb-agenda root)))
+                  nil)
                  ((zerop dispatched)
                   (return))))))
       (dolist (th workers)
