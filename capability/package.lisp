@@ -15,6 +15,10 @@
    #:unknown-operation
    #:unknown-operation-name
    #:unknown-operation-capability
+   #:invoke-use-value
+   #:invoke-skip
+   #:auto-skip
+   #:with-auto-skip
 
    #:capability
    #:capability-name

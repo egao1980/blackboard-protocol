@@ -60,6 +60,26 @@
     (ok (eql 1 (read-section bb :a)) "parent unchanged on conflict")
     (ok (eq :absent (read-section bb :b :default :absent)))))
 
+(deftest merge-fail-use-parent
+  (let* ((bb (make-blackboard))
+         (ws (fork-workspace bb "parent")))
+    (write-section bb :a 1)
+    (write-section (workspace-blackboard ws) :a 2)
+    (write-section (workspace-blackboard ws) :b 3)
+    (with-auto-use-parent
+      (merge-workspace ws :strategy :fail-on-conflict))
+    (ok (eql 1 (read-section bb :a)))
+    (ok (eql 3 (read-section bb :b)))))
+
+(deftest merge-fail-use-child
+  (let* ((bb (make-blackboard))
+         (ws (fork-workspace bb "child")))
+    (write-section bb :a 1)
+    (write-section (workspace-blackboard ws) :a 2)
+    (with-auto-use-child
+      (merge-workspace ws :strategy :fail-on-conflict))
+    (ok (eql 2 (read-section bb :a)))))
+
 (deftest merge-fail-on-conflict-ok-when-equal
   (let* ((bb (make-blackboard))
          (ws (fork-workspace bb "eq")))

@@ -23,7 +23,14 @@ No SBCL eql-specializer / find-method."))
                  (fboundp op-name)
                  (fdefinition op-name))))
     (unless (typep fn 'generic-function)
-      (error 'unknown-operation :capability cap :name op-name))
+      (restart-case
+          (error 'unknown-operation :capability cap :name op-name)
+        (use-value (value)
+          :report "Use a supplied operation result"
+          (return-from invoke-operation value))
+        (skip ()
+          :report "Skip the unknown operation"
+          (return-from invoke-operation nil))))
     (apply fn cap args)))
 
 ;;; Catalogue = named vocabulary + instance registry.
@@ -146,8 +153,18 @@ A blackboard is another host: same GFs, storage stays the shared hash for COW.")
   cap)
 
 (defmethod get-capability ((host capability-catalogue) name)
-  (bt2:with-lock-held ((catalogue-lock host))
-    (gethash name (catalogue-entries host))))
+  (or (bt2:with-lock-held ((catalogue-lock host))
+        (gethash name (catalogue-entries host)))
+      (restart-case
+          (progn
+            (signal 'unknown-capability :name name)
+            nil)
+        (use-value (cap)
+          :report "Use a supplied capability"
+          cap)
+        (skip ()
+          :report "Treat the missing capability as NIL"
+          nil))))
 
 (defmethod unregister-capability ((host capability-catalogue) name)
   (%assert-live-catalogue host)
@@ -165,9 +182,19 @@ A blackboard is another host: same GFs, storage stays the shared hash for COW.")
   cap)
 
 (defmethod get-capability (bb name)
-  (let ((lock (%capability-lock bb)))
-    (bt2:with-lock-held (lock)
-      (gethash name (%capability-table bb)))))
+  (or (let ((lock (%capability-lock bb)))
+        (bt2:with-lock-held (lock)
+          (gethash name (%capability-table bb))))
+      (restart-case
+          (progn
+            (signal 'unknown-capability :name name)
+            nil)
+        (use-value (cap)
+          :report "Use a supplied capability"
+          cap)
+        (skip ()
+          :report "Treat the missing capability as NIL"
+          nil))))
 
 (defmethod unregister-capability (bb name)
   (let ((lock (%capability-lock bb)))

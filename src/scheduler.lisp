@@ -95,16 +95,25 @@
    way out, and macOS can report active-count 0 while that thread is still
    in `unwind-protect` (seen as `second-workspace-interleaves` leaving
    `(:EDIT)` on one COW board)."
+  (call-with-blackboard-restarts
+   (lambda ()
   (let ((deadline (+ (get-internal-real-time)
                      (* timeout internal-time-units-per-second)))
         (workers nil))
     (unwind-protect
          (loop
            (when (>= (get-internal-real-time) deadline)
-             (error 'scheduler-timeout
-                    :message (format nil "agenda=~A active=~A"
-                                     (agenda-size root)
-                                     (bb-active-count root))))
+             (restart-case
+                 (error 'scheduler-timeout
+                        :message (format nil "agenda=~A active=~A"
+                                         (agenda-size root)
+                                         (bb-active-count root)))
+               (retry ()
+                 :report "Retry waiting for the agenda to drain"
+                 (%invoke-retry))
+               (use-value (value)
+                 :report "Use a supplied return value"
+                 (return-from drain-agenda value))))
            (loop for ksar = (pop-runnable-ksar root)
                  while ksar
                  do (push (spawn-ksar-worker root ksar) workers))
@@ -120,7 +129,7 @@
               (setf workers (%join-ksar-workers workers))
               (when (%agenda-idle-p root)
                 (return)))))
-      (%join-ksar-workers workers))))
+      (%join-ksar-workers workers))))))
 
 (defun start-scheduler (bb)
   (let ((root (find-root-bb bb)))
@@ -164,17 +173,26 @@
     root))
 
 (defun wait-until-idle (bb &key (timeout 10))
-  (let ((root (find-root-bb bb))
-        (deadline (+ (get-internal-real-time)
-                     (* timeout internal-time-units-per-second))))
-    (loop
-      (when (bt2:with-lock-held ((bb-agenda-lock root))
-              (and (zerop (pqueue-size (bb-agenda root)))
-                   (zerop (bb-active-count root))))
-        (return root))
-      (when (>= (get-internal-real-time) deadline)
-        (error 'scheduler-timeout :message "wait-until-idle"))
-      (sleep 0.02))))
+  (call-with-blackboard-restarts
+   (lambda ()
+     (let ((root (find-root-bb bb))
+           (deadline (+ (get-internal-real-time)
+                        (* timeout internal-time-units-per-second))))
+       (loop
+         (when (bt2:with-lock-held ((bb-agenda-lock root))
+                 (and (zerop (pqueue-size (bb-agenda root)))
+                      (zerop (bb-active-count root))))
+           (return root))
+         (when (>= (get-internal-real-time) deadline)
+           (restart-case
+               (error 'scheduler-timeout :message "wait-until-idle")
+             (retry ()
+               :report "Retry waiting until idle"
+               (%invoke-retry))
+             (use-value (value)
+               :report "Use a supplied return value"
+               (return-from wait-until-idle value))))
+         (sleep 0.02))))))
 
 (defgeneric run-scheduler (bb &key until-empty timeout))
 
