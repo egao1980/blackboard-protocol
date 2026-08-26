@@ -43,9 +43,9 @@
   (let ((bb (make-blackboard))
         (ks (make-instance 'echo-ks :name 'echo)))
     (ok (null (get-ks bb 'echo)))
-    (ok (eq ks
-            (handler-bind ((unknown-ks
-                            (lambda (c)
-                              (invoke-use-value ks c))))
-              (require-ks bb 'echo))))
+    (let ((got (handler-bind ((unknown-ks
+                               (lambda (c)
+                                 (use-value ks c))))
+                 (require-ks bb 'echo))))
+      (ok (eq ks got)))
     (ok (signals (require-ks bb 'echo) 'unknown-ks))))
