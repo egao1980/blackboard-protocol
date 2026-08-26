@@ -153,18 +153,8 @@ A blackboard is another host: same GFs, storage stays the shared hash for COW.")
   cap)
 
 (defmethod get-capability ((host capability-catalogue) name)
-  (or (bt2:with-lock-held ((catalogue-lock host))
-        (gethash name (catalogue-entries host)))
-      (restart-case
-          (progn
-            (signal 'unknown-capability :name name)
-            nil)
-        (use-value (cap)
-          :report "Use a supplied capability"
-          cap)
-        (skip ()
-          :report "Treat the missing capability as NIL"
-          nil))))
+  (bt2:with-lock-held ((catalogue-lock host))
+    (gethash name (catalogue-entries host))))
 
 (defmethod unregister-capability ((host capability-catalogue) name)
   (%assert-live-catalogue host)
@@ -182,13 +172,15 @@ A blackboard is another host: same GFs, storage stays the shared hash for COW.")
   cap)
 
 (defmethod get-capability (bb name)
-  (or (let ((lock (%capability-lock bb)))
-        (bt2:with-lock-held (lock)
-          (gethash name (%capability-table bb))))
+  (let ((lock (%capability-lock bb)))
+    (bt2:with-lock-held (lock)
+      (gethash name (%capability-table bb)))))
+
+(defun require-capability (host name)
+  "GET-CAPABILITY or UNKNOWN-CAPABILITY with USE-VALUE / SKIP."
+  (or (get-capability host name)
       (restart-case
-          (progn
-            (signal 'unknown-capability :name name)
-            nil)
+          (error 'unknown-capability :name name)
         (use-value (cap)
           :report "Use a supplied capability"
           cap)

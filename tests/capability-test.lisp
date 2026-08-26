@@ -43,14 +43,14 @@
     (ok (null (get-capability bb :llm-generation)))
     (ng (capability-supported-p bb :llm-generation))))
 
-(deftest get-capability-use-value
+(deftest require-capability-use-value
   (let ((bb (make-blackboard))
         (cap (make-instance 'code-editing-capability)))
     (ok (eq cap
             (handler-bind ((unknown-capability
                             (lambda (c)
                               (invoke-use-value cap c))))
-              (get-capability bb :code-editing))))))
+              (require-capability bb :code-editing))))))
 
 (deftest catalogues-define-and-query
   (ok (catalogue-defines-p :llm :llm-vision))

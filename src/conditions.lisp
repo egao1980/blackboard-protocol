@@ -83,19 +83,16 @@
     (when r (invoke-restart r))))
 
 (defun auto-use-parent (condition)
-  (if (find-restart 'use-parent condition)
-      (invoke-use-parent condition)
-      (error condition)))
+  (when (find-restart 'use-parent condition)
+    (invoke-use-parent condition)))
 
 (defun auto-use-child (condition)
-  (if (find-restart 'use-child condition)
-      (invoke-use-child condition)
-      (error condition)))
+  (when (find-restart 'use-child condition)
+    (invoke-use-child condition)))
 
 (defun auto-retry (condition)
-  (if (find-restart 'retry condition)
-      (invoke-retry condition)
-      (error condition)))
+  (when (find-restart 'retry condition)
+    (invoke-retry condition)))
 
 (defmacro with-auto-use-parent (&body body)
   `(handler-bind ((workspace-merge-conflict #'auto-use-parent))

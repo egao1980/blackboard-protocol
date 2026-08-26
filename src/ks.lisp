@@ -39,13 +39,15 @@
   name)
 
 (defun get-ks (bb name)
-  (or (let ((root (find-root-bb bb)))
-        (bt2:with-lock-held ((blackboard-lock root))
-          (gethash name (blackboard-ks-registry root))))
+  (let ((root (find-root-bb bb)))
+    (bt2:with-lock-held ((blackboard-lock root))
+      (gethash name (blackboard-ks-registry root)))))
+
+(defun require-ks (bb name)
+  "GET-KS or UNKNOWN-KS with USE-VALUE / SKIP."
+  (or (get-ks bb name)
       (restart-case
-          (progn
-            (signal 'unknown-ks :name name)
-            nil)
+          (error 'unknown-ks :name name)
         (use-value (ks)
           :report "Use a supplied knowledge source"
           ks)
