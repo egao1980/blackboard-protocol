@@ -6,8 +6,7 @@
   :depends-on ("bordeaux-threads")
   :properties (:cl-repo
                (:provides ("blackboard-protocol" "capability-protocol")
-                :ci (:with ("capability-protocol")
-                     :sources (("bordeaux-threads" :ql) ("rove" :ql)))))
+                :ci (:with ("capability-protocol"))))
   :serial t
   :pathname "src"
   :components ((:file "package")
