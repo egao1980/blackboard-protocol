@@ -14,6 +14,7 @@
    #:scheduler-timeout
    #:unknown-ks
    #:unknown-ks-name
+   #:require-ks
    #:call-with-blackboard-restarts
    #:with-blackboard-restarts
    #:invoke-retry

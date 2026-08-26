@@ -5,7 +5,9 @@
   (:import-from #:blackboard-protocol
                 #:blackboard
                 #:blackboard-error
-                #:blackboard-error-message)
+                #:blackboard-error-message
+                #:invoke-use-value
+                #:invoke-skip)
   (:export
    #:capability-error
    #:unknown-capability
@@ -35,6 +37,7 @@
    #:register-capability
    #:unregister-capability
    #:get-capability
+   #:require-capability
    #:list-capabilities
    #:capability-supported-p
    #:defcapability
