@@ -115,9 +115,14 @@
           (ok (equal '(:start :start) (mapcar #'first starts))
               "two coding workspaces start in parallel"))
         (ok (equal '(:edit :test :done)
-                   (read-section (workspace-blackboard a) :trace)))
+                   (read-section (workspace-blackboard a) :trace))
+            (format nil "job-a trace ~s errors ~s"
+                    (read-section (workspace-blackboard a) :trace)
+                    (read-section bb :errors :default nil)))
         (ok (equal '(:edit :test :done)
-                   (read-section (workspace-blackboard b) :trace)))))))
+                   (read-section (workspace-blackboard b) :trace))
+            (format nil "job-b trace ~s"
+                    (read-section (workspace-blackboard b) :trace)))))))
 
 (deftest coding-agent-cancel-sticks
   (let* ((bb (make-blackboard))

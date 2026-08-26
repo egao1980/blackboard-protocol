@@ -29,6 +29,8 @@ Briefs: [`blackboard.md`](https://github.com/egao1980/cl-stack/blob/main/docs/ca
 
 Control path: `write-section` → watchers → KSAR → priority agenda → bounded workers. Continue a workspace with `requeue-ksar` (no trigger-key flicker). Serial-per-workspace; `max-concurrency` caps parallel *workspaces*.
 
+OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.1.0` · `capability-protocol:0.1.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
