@@ -234,7 +234,8 @@
   (let ((root (find-root-bb bb)))
     (bt2:with-lock-held ((bb-agenda-lock root))
       (pqueue-push (bb-agenda root) ksar)
-      (bt2:condition-notify (bb-agenda-cv root))))
+      (bt2:condition-notify (bb-agenda-cv root))
+      (bt2:condition-notify (bb-active-cv root))))
   ksar)
 
 (defun agenda-contents (bb)

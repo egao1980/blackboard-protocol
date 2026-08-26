@@ -4,7 +4,10 @@
   :author "egao1980"
   :license "MIT"
   :depends-on ("bordeaux-threads")
-  :properties (:cl-repo (:ci (:with ("capability-protocol") :sources (("bordeaux-threads" :ql) ("rove" :ql)))))
+  :properties (:cl-repo
+               (:provides ("blackboard-protocol" "capability-protocol")
+                :ci (:with ("capability-protocol")
+                     :sources (("bordeaux-threads" :ql) ("rove" :ql)))))
   :serial t
   :pathname "src"
   :components ((:file "package")
@@ -26,6 +29,8 @@
                (:file "workspace-test")
                (:file "scheduler-test")
                (:file "ks-test")
+               (:file "capability-package")
+               (:file "capability-test")
                (:file "coding-agent-test"))
   :perform (test-op (o c)
              (unless (symbol-call :rove :run c)

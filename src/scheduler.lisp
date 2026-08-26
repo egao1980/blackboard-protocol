@@ -77,7 +77,24 @@
        (release-ksar-slot root ksar)))
    :name (format nil "ksar-~A" (ksar-id ksar))))
 
+(defun %agenda-idle-p (root)
+  (bt2:with-lock-held ((bb-agenda-lock root))
+    (and (zerop (pqueue-size (bb-agenda root)))
+         (zerop (bb-active-count root)))))
+
+(defun %join-ksar-workers (workers)
+  (dolist (th workers)
+    (when (bt2:thread-alive-p th)
+      (ignore-errors (bt2:join-thread th))))
+  nil)
+
 (defun drain-agenda (root &key (timeout 10))
+  "Run until the root agenda is empty and no KSAR is active.
+
+   Join workers before declaring idle: a handler may `requeue-ksar` on the
+   way out, and macOS can report active-count 0 while that thread is still
+   in `unwind-protect` (seen as `second-workspace-interleaves` leaving
+   `(:EDIT)` on one COW board)."
   (let ((deadline (+ (get-internal-real-time)
                      (* timeout internal-time-units-per-second)))
         (workers nil))
@@ -88,24 +105,22 @@
                     :message (format nil "agenda=~A active=~A"
                                      (agenda-size root)
                                      (bb-active-count root))))
-           (let ((dispatched 0))
-             (loop for ksar = (pop-runnable-ksar root)
-                   while ksar
-                   do (incf dispatched)
-                      (push (spawn-ksar-worker root ksar) workers))
-             (bt2:with-lock-held ((bb-agenda-lock root))
-               (cond
-                 ((plusp (bb-active-count root))
+           (loop for ksar = (pop-runnable-ksar root)
+                 while ksar
+                 do (push (spawn-ksar-worker root ksar) workers))
+           (cond
+             ((not (%agenda-idle-p root))
+              (bt2:with-lock-held ((bb-agenda-lock root))
+                (unless (and (zerop (pqueue-size (bb-agenda root)))
+                             (zerop (bb-active-count root)))
                   (bt2:condition-wait (bb-active-cv root)
                                       (bb-agenda-lock root)
-                                      :timeout 0.1))
-                 ((plusp (pqueue-size (bb-agenda root)))
-                  nil)
-                 ((zerop dispatched)
-                  (return))))))
-      (dolist (th workers)
-        (when (bt2:thread-alive-p th)
-          (ignore-errors (bt2:join-thread th)))))))
+                                      :timeout 0.05))))
+             (t
+              (setf workers (%join-ksar-workers workers))
+              (when (%agenda-idle-p root)
+                (return)))))
+      (%join-ksar-workers workers))))
 
 (defun start-scheduler (bb)
   (let ((root (find-root-bb bb)))
