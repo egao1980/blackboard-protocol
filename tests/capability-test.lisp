@@ -46,11 +46,11 @@
 (deftest require-capability-use-value
   (let ((bb (make-blackboard))
         (cap (make-instance 'code-editing-capability)))
-    (ok (eq cap
-            (handler-bind ((unknown-capability
-                            (lambda (c)
-                              (invoke-use-value cap c))))
-              (require-capability bb :code-editing))))))
+    (let ((got (handler-bind ((unknown-capability
+                               (lambda (c)
+                                 (use-value cap c))))
+                 (require-capability bb :code-editing))))
+      (ok (eq cap got)))))
 
 (deftest catalogues-define-and-query
   (ok (catalogue-defines-p :llm :llm-vision))
