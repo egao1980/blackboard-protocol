@@ -40,4 +40,44 @@
 
 (deftest invoke-unknown-capability
   (let ((bb (make-blackboard)))
-    (ok (null (get-capability bb :llm-generation)))))
+    (ok (null (get-capability bb :llm-generation)))
+    (ng (capability-supported-p bb :llm-generation))))
+
+(deftest catalogues-define-and-query
+  (ok (catalogue-defines-p :llm :llm-vision))
+  (ok (catalogue-defines-p :llm :llm-generation))
+  (ok (catalogue-defines-p :world :compute))
+  (ng (catalogue-defines-p :llm :compute))
+  (ng (catalogue-defines-p :world :llm-vision))
+  (ok (find-catalogue :llm))
+  (ok (eq :llm (catalogue-name (find-catalogue :llm))))
+  (ok (signals (make-catalogue :no-such-catalogue) 'unknown-catalogue))
+  (let ((cat (make-catalogue :llm))
+        (cap (make-instance 'llm-vision-capability)))
+    (ng (capability-supported-p cat :llm-vision))
+    (register-capability cat cap)
+    (ok (capability-supported-p cat :llm-vision))
+    (ok (eq cap (get-capability cat :llm-vision)))
+    (ok (member :llm-vision (mapcar (lambda (row) (getf row :name))
+                                    (list-capabilities cat))))
+    (unregister-capability cat :llm-vision)
+    (ng (capability-supported-p cat :llm-vision))))
+
+(deftest make-catalogue-does-not-share-interned-entries
+  (let ((spec (find-catalogue :llm))
+        (live (make-catalogue :llm)))
+    (register-capability live (make-instance 'llm-generation-capability))
+    (ok (capability-supported-p live :llm-generation))
+    (ng (capability-supported-p spec :llm-generation))))
+
+(deftest interned-catalogue-is-read-only
+  (let ((spec (find-catalogue :llm)))
+    (ok (signals (register-capability spec (make-instance 'llm-generation-capability))
+                 'capability-error))
+    (ok (signals (unregister-capability spec :llm-generation)
+                 'capability-error))))
+
+(deftest catalogue-rejects-undefined-name
+  (let ((cat (make-catalogue :llm)))
+    (ok (signals (register-capability cat (make-instance 'compute-capability))
+                 'unknown-capability))))

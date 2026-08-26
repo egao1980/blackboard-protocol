@@ -36,3 +36,14 @@ NAME is a keyword. OPERATIONS: (:operation op-name (params...) &key returns doc)
          (list ,@(nreverse desc-forms)))
        ,@(nreverse gen-forms)
        ',class-name)))
+
+(defmacro defcatalogue (name doc &body capability-names)
+  "Intern a named capability vocabulary. Query with FIND-CATALOGUE / CATALOGUE-DEFINES-P.
+Live register/get uses (MAKE-CATALOGUE NAME), not the interned spec."
+  `(progn
+     (setf (gethash ,name *capability-catalogues*)
+           (make-capability-catalogue
+            :name ,name
+            :description ,doc
+            :defined-names ',capability-names))
+     ',name))
