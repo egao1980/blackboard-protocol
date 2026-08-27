@@ -62,6 +62,7 @@
    #:ksar-context
    #:ksar-status
    #:ksar-step
+   #:ksar-continuation
    #:enqueue-ksar
    #:requeue-ksar
    #:agenda-contents

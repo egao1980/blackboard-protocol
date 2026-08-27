@@ -138,6 +138,38 @@
     (ok (= 2 steps))
     (ok (= 2 (workspace-step-count ws)))))
 
+(deftest requeue-commits-at-release
+  (let* ((bb (make-blackboard))
+         (ws (fork-workspace bb "commit"))
+         (saw-empty nil)
+         (steps 0))
+    (watch (workspace-blackboard ws) :id 'agent :requires '(:go)
+           :handler (lambda (board ksar)
+                      (incf steps)
+                      (when (< steps 2)
+                        (requeue-ksar board ksar)
+                        (setf saw-empty (zerop (agenda-size board))))))
+    (write-section (workspace-blackboard ws) :go t)
+    (drain bb)
+    (ok saw-empty "running requeue is not on the agenda until slot release")
+    (ok (= 2 steps))))
+
+(deftest handler-error-fails-workspace
+  (let* ((bb (make-blackboard))
+         (ws (fork-workspace bb "boom"))
+         (steps 0))
+    (watch (workspace-blackboard ws) :id 'boom :requires '(:x)
+           :handler (lambda (board ksar)
+                      (declare (ignore board ksar))
+                      (incf steps)
+                      (error "explode")))
+    (write-section (workspace-blackboard ws) :x t)
+    (drain bb)
+    (ok (= 1 steps))
+    (ok (eq :failed (workspace-status ws)))
+    (ok (consp (read-section bb :errors)))
+    (ok (zerop (agenda-size bb)))))
+
 (deftest handler-error-is-recorded-loop-lives
   (let ((bb (make-blackboard))
         (ok-ran nil))

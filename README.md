@@ -27,9 +27,9 @@ Briefs: [`blackboard.md`](https://github.com/egao1980/cl-stack/blob/main/docs/ca
   (stack-blackboard:read-section bb :pong))
 ```
 
-Control path: `write-section` → watchers → KSAR → priority agenda → bounded workers. Continue a workspace with `requeue-ksar` (no trigger-key flicker). Serial-per-workspace; `max-concurrency` caps parallel *workspaces*.
+Control path: `write-section` → watchers → KSAR → priority agenda → bounded workers. Continue a workspace with `requeue-ksar` (no trigger-key flicker). A running handler's continuation is published when the serial slot is released — idle is not "queue empty while a handler still has a next step". Handler failure marks the workspace `:failed`. Serial-per-workspace; `max-concurrency` caps parallel *workspaces*. Capabilities are root-global (COW isolates sections, not cap instances) — concurrent workspaces share the same objects.
 
-OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.1.0` · `capability-protocol:0.2.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
+OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.1.1` · `capability-protocol:0.2.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
 
 Catalogues (`defcatalogue`) are the vocabulary. Hosts (a live `(make-catalogue :llm)` or a blackboard) are where you `register-capability` / `get-capability` / `capability-supported-p`. `:world` = compute/edit/vcs/search/comms. `:llm` = generation + modalities (no provider types here).
 

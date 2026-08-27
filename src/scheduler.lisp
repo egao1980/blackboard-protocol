@@ -8,24 +8,35 @@
 
 (defgeneric requeue-ksar (bb ksar &key workspace))
 
+(defun %make-continuation-ksar (ksar ws handler-bb)
+  (make-ksar :watcher-id (ksar-watcher-id ksar)
+             :workspace ws
+             :blackboard handler-bb
+             :handler (ksar-handler ksar)
+             :triggered-key :requeue
+             :priority (ksar-priority ksar)
+             :context (ksar-context ksar)
+             :step (1+ (or (ksar-step ksar) 0))))
+
+(defun %requeue-blocked-p (ws)
+  (or (workspace-stopped-p ws)
+      (and ws (workspace-max-steps ws)
+           (>= (workspace-step-count ws) (workspace-max-steps ws)))))
+
 (defmethod requeue-ksar ((bb blackboard) ksar &key workspace)
+  "Continue KSAR. If it is the running slot, stash the next KSAR and publish
+   it from `release-ksar-slot` under the agenda lock (same critical section as
+   active-count). Immediate enqueue only when called outside a running handler."
   (let* ((ws (or workspace (ksar-workspace ksar)))
          (handler-bb (or (ksar-blackboard ksar) bb))
          (root (find-root-bb bb)))
-    (when (workspace-stopped-p ws)
+    (when (%requeue-blocked-p ws)
       (return-from requeue-ksar nil))
-    (when (and ws (workspace-max-steps ws)
-               (>= (workspace-step-count ws) (workspace-max-steps ws)))
-      (return-from requeue-ksar nil))
-    (enqueue-ksar root
-                  (make-ksar :watcher-id (ksar-watcher-id ksar)
-                             :workspace ws
-                             :blackboard handler-bb
-                             :handler (ksar-handler ksar)
-                             :triggered-key :requeue
-                             :priority (ksar-priority ksar)
-                             :context (ksar-context ksar)
-                             :step (1+ (or (ksar-step ksar) 0))))))
+    (let ((next (%make-continuation-ksar ksar ws handler-bb)))
+      (if (eq (ksar-status ksar) :running)
+          (setf (ksar-continuation ksar) next)
+          (enqueue-ksar root next))
+      next)))
 
 (defun pop-runnable-ksar (root)
   (bt2:with-lock-held ((bb-agenda-lock root))
@@ -44,7 +55,13 @@
       ksar)))
 
 (defun release-ksar-slot (root ksar)
+  "Drop the running serial slot and publish any stashed continuation.
+   Must not call `enqueue-ksar` — that lock is not recursive."
   (bt2:with-lock-held ((bb-agenda-lock root))
+    (let ((next (ksar-continuation ksar)))
+      (setf (ksar-continuation ksar) nil)
+      (when (and next (not (%requeue-blocked-p (ksar-workspace next))))
+        (pqueue-push (bb-agenda root) next)))
     (decf (bb-active-count root))
     (remhash (ksar-serial-key ksar) (bb-running-workspaces root))
     (bt2:condition-notify (bb-agenda-cv root))
@@ -67,6 +84,8 @@
           (setf (ksar-status ksar) :completed))
       (serious-condition (e)
         (setf (ksar-status ksar) :failed)
+        (when ws
+          (setf (workspace-status ws) :failed))
         (record-bb-error root ksar e)))))
 
 (defun spawn-ksar-worker (root ksar)
@@ -91,10 +110,9 @@
 (defun drain-agenda (root &key (timeout 10))
   "Run until the root agenda is empty and no KSAR is active.
 
-   Join workers before declaring idle: a handler may `requeue-ksar` on the
-   way out, and macOS can report active-count 0 while that thread is still
-   in `unwind-protect` (seen as `second-workspace-interleaves` leaving
-   `(:EDIT)` on one COW board)."
+   Continuations are published in `release-ksar-slot`, so idle cannot race a
+   still-running `requeue-ksar`. Join workers before returning so the last
+   unwind-protect is done (covers `wait-until-idle` callers that skip this)."
   (call-with-blackboard-restarts
    (lambda ()
   (let ((deadline (+ (get-internal-real-time)
