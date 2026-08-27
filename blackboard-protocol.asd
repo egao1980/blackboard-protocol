@@ -1,5 +1,5 @@
 (defsystem "blackboard-protocol"
-  :version "0.1.0"
+  :version "0.1.1"
   :description "AI-agnostic KSAR blackboard + COW workspaces for cl-stack"
   :author "egao1980"
   :license "MIT"

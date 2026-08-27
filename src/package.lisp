@@ -14,6 +14,9 @@
    #:scheduler-timeout
    #:unknown-ks
    #:unknown-ks-name
+   #:ksar-handler-error
+   #:ksar-handler-error-ksar
+   #:ksar-handler-error-cause
    #:require-ks
    #:call-with-blackboard-restarts
    #:with-blackboard-restarts
@@ -52,6 +55,7 @@
 
    ;; KSAR
    #:ksar
+   #:make-ksar
    #:ksar-id
    #:ksar-watcher-id
    #:ksar-workspace
@@ -62,6 +66,7 @@
    #:ksar-context
    #:ksar-status
    #:ksar-step
+   #:ksar-continuation
    #:enqueue-ksar
    #:requeue-ksar
    #:agenda-contents

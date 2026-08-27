@@ -5,20 +5,25 @@
 
 (defclass mock-compute (compute-capability)
   ((runs :initform nil :accessor mock-runs)
-   (result :initarg :result :initform '(:exit 0) :accessor mock-result)))
+   (result :initarg :result :initform '(:exit 0) :accessor mock-result)
+   (lock :initform (%test-lock "mock-compute") :reader mock-lock)))
 
 (defmethod run-command ((cap mock-compute) argv &key)
-  (push argv (mock-runs cap))
+  (bt2:with-lock-held ((mock-lock cap))
+    (push argv (mock-runs cap)))
   (mock-result cap))
 
 (defclass mock-edit (code-editing-capability)
-  ((files :initform (make-hash-table :test 'equal) :accessor mock-files)))
+  ((files :initform (make-hash-table :test 'equal) :accessor mock-files)
+   (lock :initform (%test-lock "mock-edit") :reader mock-lock)))
 
 (defmethod read-file ((cap mock-edit) path &key)
-  (gethash path (mock-files cap)))
+  (bt2:with-lock-held ((mock-lock cap))
+    (gethash path (mock-files cap))))
 
 (defmethod write-file ((cap mock-edit) path content &key)
-  (setf (gethash path (mock-files cap)) content)
+  (bt2:with-lock-held ((mock-lock cap))
+    (setf (gethash path (mock-files cap)) content))
   path)
 
 (defun install-coding-caps (bb &key (edit (make-instance 'mock-edit))
@@ -116,13 +121,16 @@
               "two coding workspaces start in parallel"))
         (ok (equal '(:edit :test :done)
                    (read-section (workspace-blackboard a) :trace))
-            (format nil "job-a trace ~s errors ~s"
+            (format nil "job-a trace ~s status ~s errors ~s"
                     (read-section (workspace-blackboard a) :trace)
+                    (workspace-status a)
                     (read-section bb :errors :default nil)))
         (ok (equal '(:edit :test :done)
                    (read-section (workspace-blackboard b) :trace))
-            (format nil "job-b trace ~s"
-                    (read-section (workspace-blackboard b) :trace)))))))
+            (format nil "job-b trace ~s status ~s errors ~s"
+                    (read-section (workspace-blackboard b) :trace)
+                    (workspace-status b)
+                    (read-section bb :errors :default nil)))))))
 
 (deftest coding-agent-cancel-sticks
   (let* ((bb (make-blackboard))

@@ -31,7 +31,8 @@
    (priority :initarg :priority :accessor ksar-priority :initform 0)
    (context :initarg :context :accessor ksar-context :initform nil)
    (status :initarg :status :accessor ksar-status :initform :pending)
-   (step :initarg :step :accessor ksar-step :initform 0)))
+   (step :initarg :step :accessor ksar-step :initform 0)
+   (continuation :initarg :continuation :accessor ksar-continuation :initform nil)))
 
 (defun make-ksar (&rest initargs)
   (apply #'make-instance 'ksar
