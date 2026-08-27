@@ -14,6 +14,19 @@
    #:scheduler-timeout
    #:unknown-ks
    #:unknown-ks-name
+   #:require-ks
+   #:call-with-blackboard-restarts
+   #:with-blackboard-restarts
+   #:invoke-retry
+   #:invoke-use-value
+   #:invoke-use-parent
+   #:invoke-use-child
+   #:invoke-skip
+   #:auto-use-parent
+   #:auto-use-child
+   #:auto-retry
+   #:with-auto-use-parent
+   #:with-auto-use-child
 
    ;; blackboard
    #:blackboard

@@ -27,3 +27,12 @@
                          (capability-name (unknown-operation-capability c))
                          nil)
                      (blackboard-error-message c)))))
+
+(defun auto-skip (condition)
+  (when (find-restart 'skip condition)
+    (invoke-skip condition)))
+
+(defmacro with-auto-skip (&body body)
+  `(handler-bind ((unknown-capability #'auto-skip)
+                  (unknown-operation #'auto-skip))
+     ,@body))

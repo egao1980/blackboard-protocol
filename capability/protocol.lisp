@@ -23,7 +23,14 @@ No SBCL eql-specializer / find-method."))
                  (fboundp op-name)
                  (fdefinition op-name))))
     (unless (typep fn 'generic-function)
-      (error 'unknown-operation :capability cap :name op-name))
+      (restart-case
+          (error 'unknown-operation :capability cap :name op-name)
+        (use-value (value)
+          :report "Use a supplied operation result"
+          (return-from invoke-operation value))
+        (skip ()
+          :report "Skip the unknown operation"
+          (return-from invoke-operation nil))))
     (apply fn cap args)))
 
 ;;; Catalogue = named vocabulary + instance registry.
@@ -168,6 +175,18 @@ A blackboard is another host: same GFs, storage stays the shared hash for COW.")
   (let ((lock (%capability-lock bb)))
     (bt2:with-lock-held (lock)
       (gethash name (%capability-table bb)))))
+
+(defun require-capability (host name)
+  "GET-CAPABILITY or UNKNOWN-CAPABILITY with USE-VALUE / SKIP."
+  (or (get-capability host name)
+      (restart-case
+          (error 'unknown-capability :name name)
+        (use-value (cap)
+          :report "Use a supplied capability"
+          cap)
+        (skip ()
+          :report "Treat the missing capability as NIL"
+          nil))))
 
 (defmethod unregister-capability (bb name)
   (let ((lock (%capability-lock bb)))

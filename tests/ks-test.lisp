@@ -38,3 +38,14 @@
     (write-section bb :in 1)
     (drain bb)
     (ok (eq :absent (read-section bb :out :default :absent)))))
+
+(deftest require-ks-use-value
+  (let ((bb (make-blackboard))
+        (ks (make-instance 'echo-ks :name 'echo)))
+    (ok (null (get-ks bb 'echo)))
+    (let ((got (handler-bind ((unknown-ks
+                               (lambda (c)
+                                 (use-value ks c))))
+                 (require-ks bb 'echo))))
+      (ok (eq ks got)))
+    (ok (signals (require-ks bb 'echo) 'unknown-ks))))

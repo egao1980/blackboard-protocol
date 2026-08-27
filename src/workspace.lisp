@@ -112,21 +112,43 @@
                    (write-section parent key (%union-values pv child))))
                (write-section parent key child)))))
       (:fail-on-conflict
-       (dolist (pair pairs)
-         (let ((key (car pair))
-               (child (cdr pair)))
-           (when (and (section-bound-p parent key)
-                      (not (equal (read-section parent key) child)))
-             (error 'workspace-merge-conflict
-                    :key key
-                    :parent-value (read-section parent key)
-                    :child-value child))))
-       (dolist (pair (nreverse pairs))
-         (let ((key (car pair))
-               (child (cdr pair)))
-           (unless (and (section-bound-p parent key)
-                        (equal (read-section parent key) child))
-             (write-section parent key child))))))
+       (let ((resolved nil))
+         (dolist (pair pairs)
+           (let* ((key (car pair))
+                  (child (cdr pair))
+                  (parent-val (and (section-bound-p parent key)
+                                   (read-section parent key))))
+             (if (and (section-bound-p parent key)
+                      (not (equal parent-val child)))
+                 (let ((decision
+                        (restart-case
+                            (error 'workspace-merge-conflict
+                                   :key key
+                                   :parent-value parent-val
+                                   :child-value child)
+                          (use-parent ()
+                            :report "Keep the parent value"
+                            :parent)
+                          (use-child ()
+                            :report "Overwrite with the child value"
+                            :child)
+                          (use-value (value)
+                            :report "Use a supplied section value"
+                            (cons :value value)))))
+                   (push (list key child decision) resolved))
+                 (push (list key child (cons :value child)) resolved))))
+         (dolist (item (nreverse resolved))
+           (destructuring-bind (key child decision) item
+             (let ((value (cond
+                            ((eq decision :parent) nil)
+                            ((eq decision :child) child)
+                            ((and (consp decision) (eq (car decision) :value))
+                             (cdr decision))
+                            (t child))))
+               (when (and (not (eq decision :parent))
+                          (not (and (section-bound-p parent key)
+                                    (equal (read-section parent key) value))))
+                 (write-section parent key value))))))))
     ws))
 
 (defmethod merge-workspace ((ws workspace) &key (strategy :overwrite))

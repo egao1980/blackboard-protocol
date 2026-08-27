@@ -43,6 +43,18 @@
     (bt2:with-lock-held ((blackboard-lock root))
       (gethash name (blackboard-ks-registry root)))))
 
+(defun require-ks (bb name)
+  "GET-KS or UNKNOWN-KS with USE-VALUE / SKIP."
+  (or (get-ks bb name)
+      (restart-case
+          (error 'unknown-ks :name name)
+        (use-value (ks)
+          :report "Use a supplied knowledge source"
+          ks)
+        (skip ()
+          :report "Treat the missing KS as NIL"
+          nil))))
+
 (defun list-ks (bb)
   (let ((root (find-root-bb bb)))
     (bt2:with-lock-held ((blackboard-lock root))
