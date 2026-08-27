@@ -34,6 +34,14 @@
                      (unknown-ks-name c)
                      (blackboard-error-message c)))))
 
+(define-condition ksar-handler-error (blackboard-error)
+  ((ksar :initarg :ksar :reader ksar-handler-error-ksar :initform nil)
+   (cause :initarg :cause :reader ksar-handler-error-cause :initform nil))
+  (:report (lambda (c s)
+             (format s "KSAR handler failed~@[: ~A~]~@[: ~A~]"
+                     (blackboard-error-message c)
+                     (ksar-handler-error-cause c)))))
+
 ;;; --- restart helpers -------------------------------------------------------
 
 (defun call-with-blackboard-restarts (thunk)

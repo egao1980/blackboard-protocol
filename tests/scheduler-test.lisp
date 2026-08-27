@@ -154,6 +154,34 @@
     (ok saw-empty "running requeue is not on the agenda until slot release")
     (ok (= 2 steps))))
 
+(deftest ksar-handler-error-wraps-cause
+  (let* ((bb (make-blackboard))
+         (ksar (make-ksar :handler (lambda (board ksar)
+                                     (declare (ignore board ksar))
+                                     (error "explode"))))
+         (got nil))
+    (ok (signals (blackboard-protocol::run-ksar-handler bb ksar)
+                 'ksar-handler-error))
+    (handler-case (blackboard-protocol::run-ksar-handler bb ksar)
+      (ksar-handler-error (c)
+        (setf got c)))
+    (ok (search "explode" (princ-to-string (ksar-handler-error-cause got))))))
+
+(deftest ksar-handler-retry
+  (let* ((bb (make-blackboard))
+         (n 0)
+         (ksar (make-ksar :handler (lambda (board ksar)
+                                     (declare (ignore board ksar))
+                                     (incf n)
+                                     (when (= n 1)
+                                       (error "once"))))))
+    (handler-bind ((ksar-handler-error
+                    (lambda (c)
+                      (invoke-retry c))))
+      (blackboard-protocol::run-ksar-handler bb ksar))
+    (ok (= 2 n))
+    (ok (eq :completed (ksar-status ksar)))))
+
 (deftest handler-error-fails-workspace
   (let* ((bb (make-blackboard))
          (ws (fork-workspace bb "boom"))

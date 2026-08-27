@@ -67,33 +67,56 @@
     (bt2:condition-notify (bb-agenda-cv root))
     (bt2:condition-notify (bb-active-cv root))))
 
+(defun %fail-ksar (root ksar ws condition)
+  (setf (ksar-status ksar) :failed)
+  (when ws
+    (setf (workspace-status ws) :failed))
+  (record-bb-error root ksar condition)
+  nil)
+
 (defun run-ksar-handler (root ksar)
+  "Run KSAR. Restarts: CONTINUE (fail this step) and RETRY (ASDF).
+   Does not install policy — `spawn-ksar-worker` `handler-bind`s CONTINUE."
   (let ((ws (ksar-workspace ksar))
         (board (or (ksar-blackboard ksar) root))
-        (handler (ksar-handler ksar)))
+        (handler (ksar-handler ksar))
+        (last-cause nil))
     (when (workspace-stopped-p ws)
       (setf (ksar-status ksar) :failed)
       (return-from run-ksar-handler nil))
     (when ws
       (incf (workspace-step-count ws)))
-    (handler-case
-        (progn
-          (setf (ksar-status ksar) :running)
-          (when handler
-            (funcall handler board ksar))
-          (setf (ksar-status ksar) :completed))
-      (serious-condition (e)
-        (setf (ksar-status ksar) :failed)
-        (when ws
-          (setf (workspace-status ws) :failed))
-        (record-bb-error root ksar e)))))
+    (tagbody
+     :retry
+       (return-from run-ksar-handler
+         (restart-case
+             (handler-bind ((serious-condition
+                             (lambda (c)
+                               (unless (typep c 'ksar-handler-error)
+                                 (setf last-cause c)
+                                 (error 'ksar-handler-error
+                                        :ksar ksar
+                                        :cause c
+                                        :message (princ-to-string c))))))
+               (setf (ksar-status ksar) :running)
+               (when handler
+                 (funcall handler board ksar))
+               (setf (ksar-status ksar) :completed)
+               t)
+           (continue ()
+             :report "Fail this KSAR and its workspace; keep the scheduler running"
+             (%fail-ksar root ksar ws last-cause))
+           (retry ()
+             :report "Retry the KSAR handler"
+             (go :retry)))))))
 
 (defun spawn-ksar-worker (root ksar)
   (bt2:make-thread
    (lambda ()
-     (unwind-protect
-          (run-ksar-handler root ksar)
-       (release-ksar-slot root ksar)))
+     (handler-bind ((ksar-handler-error #'continue))
+       (unwind-protect
+            (run-ksar-handler root ksar)
+         (release-ksar-slot root ksar))))
    :name (format nil "ksar-~A" (ksar-id ksar))))
 
 (defun %agenda-idle-p (root)
@@ -104,7 +127,7 @@
 (defun %join-ksar-workers (workers)
   (dolist (th workers)
     (when (bt2:thread-alive-p th)
-      (ignore-errors (bt2:join-thread th))))
+      (bt2:join-thread th)))
   nil)
 
 (defun drain-agenda (root &key (timeout 10))
@@ -158,19 +181,23 @@
           (bt2:make-thread
            (lambda ()
              (loop while (scheduler-running-p root) do
-               (handler-case
-                   (let ((ksar (pop-runnable-ksar root)))
-                     (if ksar
-                         (spawn-ksar-worker root ksar)
-                         (bt2:with-lock-held ((bb-agenda-lock root))
-                           (unless (scheduler-running-p root)
-                             (return))
-                           (bt2:condition-wait (bb-agenda-cv root)
-                                               (bb-agenda-lock root)
-                                               :timeout 0.25))))
-                 (serious-condition (e)
-                   (record-bb-error root nil e)
-                   (sleep 0.2)))))
+               (handler-bind ((serious-condition
+                               (lambda (c)
+                                 (record-bb-error root nil c)
+                                 (continue c))))
+                 (restart-case
+                     (let ((ksar (pop-runnable-ksar root)))
+                       (if ksar
+                           (spawn-ksar-worker root ksar)
+                           (bt2:with-lock-held ((bb-agenda-lock root))
+                             (unless (scheduler-running-p root)
+                               (return))
+                             (bt2:condition-wait (bb-agenda-cv root)
+                                                 (bb-agenda-lock root)
+                                                 :timeout 0.25))))
+                   (continue ()
+                     :report "Keep the scheduler running after a dispatch error"
+                     (sleep 0.2))))))
            :name "bb-scheduler"))
     root))
 
