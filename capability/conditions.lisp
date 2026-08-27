@@ -10,6 +10,13 @@
                      (unknown-capability-name c)
                      (blackboard-error-message c)))))
 
+(define-condition unknown-catalogue (capability-error)
+  ((name :initarg :name :reader unknown-catalogue-name))
+  (:report (lambda (c s)
+             (format s "Unknown catalogue ~S~@[: ~A~]"
+                     (unknown-catalogue-name c)
+                     (blackboard-error-message c)))))
+
 (define-condition unknown-operation (capability-error)
   ((name :initarg :name :reader unknown-operation-name)
    (capability :initarg :capability :reader unknown-operation-capability))

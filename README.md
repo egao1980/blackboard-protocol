@@ -7,7 +7,7 @@ Extract of Demiurge **core** (sections, watchers, priority agenda, COW workspace
 | System | Role |
 |--------|------|
 | `blackboard-protocol` (`stack-blackboard`) | Sections, watchers, KSAR loop, COW workspaces |
-| `capability-protocol` (`stack-capability`) | `defcapability` + registry on the board |
+| `capability-protocol` (`stack-capability`) | `defcapability` / `defcatalogue` + query GFs (`get-capability`, `capability-supported-p`) |
 
 Briefs: [`blackboard.md`](https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/blackboard.md) · [`capability.md`](https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/capability.md) ([#192](https://github.com/egao1980/cl-stack/issues/192)–[#194](https://github.com/egao1980/cl-stack/issues/194)).
 
@@ -29,7 +29,9 @@ Briefs: [`blackboard.md`](https://github.com/egao1980/cl-stack/blob/main/docs/ca
 
 Control path: `write-section` → watchers → KSAR → priority agenda → bounded workers. Continue a workspace with `requeue-ksar` (no trigger-key flicker). Serial-per-workspace; `max-concurrency` caps parallel *workspaces*.
 
-OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.1.0` · `capability-protocol:0.1.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
+OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.1.0` · `capability-protocol:0.2.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
+
+Catalogues (`defcatalogue`) are the vocabulary. Hosts (a live `(make-catalogue :llm)` or a blackboard) are where you `register-capability` / `get-capability` / `capability-supported-p`. `:world` = compute/edit/vcs/search/comms. `:llm` = generation + modalities (no provider types here).
 
 ## License
 

@@ -10,6 +10,8 @@
    #:capability-error
    #:unknown-capability
    #:unknown-capability-name
+   #:unknown-catalogue
+   #:unknown-catalogue-name
    #:unknown-operation
    #:unknown-operation-name
    #:unknown-operation-capability
@@ -30,7 +32,18 @@
    #:unregister-capability
    #:get-capability
    #:list-capabilities
+   #:capability-supported-p
    #:defcapability
+   #:defcatalogue
+   #:capability-catalogue
+   #:make-capability-catalogue
+   #:make-catalogue
+   #:find-catalogue
+   #:list-catalogues
+   #:catalogue-name
+   #:catalogue-description
+   #:catalogue-defined-names
+   #:catalogue-defines-p
 
    ;; abstract domains — GF names only; adapters implement
    #:compute-capability
@@ -39,12 +52,26 @@
    #:web-search-capability
    #:communication-capability
    #:llm-generation-capability
+   #:llm-tools-capability
+   #:llm-vision-capability
+   #:llm-audio-capability
+   #:llm-video-capability
+   #:llm-files-capability
+   #:llm-speech-capability
+   #:llm-transcription-capability
+   #:llm-thinking-capability
+   #:llm-structured-output-capability
+   #:llm-responses-capability
    #:run-command
    #:read-file
    #:write-file
    #:git-status
    #:web-search
    #:send-message
-   #:complete))
+   #:complete
+   #:stream-complete
+   #:upload-file
+   #:synthesize
+   #:transcribe))
 
 (in-package #:capability-protocol)
