@@ -49,6 +49,10 @@
 
 (defcapability :llm-responses "Responses-style respond (items, not chat turns).")
 
+(defcapability :llm-embeddings "Text embeddings (adapter implements)."
+  (:operation embed ((inputs t)) :returns t
+   :doc "Embed INPUTS (string or sequence of strings)."))
+
 (defcatalogue :world
     "Board world I/O. Presence on a host = that domain is available."
   :compute :code-editing :version-control :web-search :communication)
@@ -57,4 +61,4 @@
     "LLM generation and modalities. Adapter registers the subset the backend implements."
   :llm-generation :llm-tools :llm-vision :llm-audio :llm-video :llm-files
   :llm-speech :llm-transcription :llm-thinking :llm-structured-output
-  :llm-responses)
+  :llm-responses :llm-embeddings)

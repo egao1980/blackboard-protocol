@@ -1,5 +1,5 @@
 (defsystem "capability-protocol"
-  :version "0.2.0"
+  :version "0.2.1"
   :description "CLOS capability protocol: defcapability / defcatalogue + query GFs"
   :author "egao1980"
   :license "MIT"
