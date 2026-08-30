@@ -69,6 +69,7 @@
    #:llm-thinking-capability
    #:llm-structured-output-capability
    #:llm-responses-capability
+   #:llm-embeddings-capability
    #:run-command
    #:read-file
    #:write-file
@@ -79,6 +80,7 @@
    #:stream-complete
    #:upload-file
    #:synthesize
-   #:transcribe))
+   #:transcribe
+   #:embed))
 
 (in-package #:capability-protocol)
