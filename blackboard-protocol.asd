@@ -6,8 +6,7 @@
   :depends-on ("bordeaux-threads")
   :properties (:cl-repo
                (:provides ("blackboard-protocol" "capability-protocol")
-                :ci (:with ("capability-protocol"
-                            "blackboard-protocol/journal"))))
+                :ci (:with ("capability-protocol"))))
   :serial t
   :pathname "src"
   :components ((:file "package")
@@ -28,11 +27,23 @@
   :pathname "src/journal"
   :components ((:file "package")
                (:file "protocol"))
-  :in-order-to ((test-op (test-op "blackboard-protocol/tests"))))
+  :in-order-to ((test-op (test-op "blackboard-protocol/journal/tests"))))
+
+;;; Journal tests need unpublished task-protocol on GHCR. Default CI
+;;; runs blackboard-protocol/tests only.
+(defsystem "blackboard-protocol/journal/tests"
+  :depends-on ("blackboard-protocol/journal" "rove")
+  :pathname "tests"
+  :serial t
+  :components ((:file "package")
+               (:file "helpers")
+               (:file "journal-test"))
+  :perform (test-op (o c)
+             (unless (symbol-call :rove :run c)
+               (error "tests failed for ~A" (component-name c)))))
 
 (defsystem "blackboard-protocol/tests"
-  :depends-on ("blackboard-protocol" "capability-protocol"
-               "blackboard-protocol/journal" "rove")
+  :depends-on ("blackboard-protocol" "capability-protocol" "rove")
   :pathname "tests"
   :serial t
   :components ((:file "package")
@@ -44,8 +55,7 @@
                (:file "ks-test")
                (:file "capability-package")
                (:file "capability-test")
-               (:file "coding-agent-test")
-               (:file "journal-test"))
+               (:file "coding-agent-test"))
   :perform (test-op (o c)
              (unless (symbol-call :rove :run c)
                (error "tests failed for ~A" (component-name c)))))
