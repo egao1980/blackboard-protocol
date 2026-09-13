@@ -41,7 +41,7 @@ Optional persistence (`blackboard-protocol/journal`) is a single `task-protocol`
   (blackboard-protocol/journal:replay-blackboard journal))
 ```
 
-OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.2.0` · `capability-protocol:0.2.0` (colocated; publish both). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
+OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.2.1` · `blackboard-protocol/journal:0.2.1` · `capability-protocol:0.2.1` (colocated; publish each). Cookbook: [cl-stack/docs/cookbooks/blackboard.md](https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/blackboard.md).
 
 Catalogues (`defcatalogue`) are the vocabulary. Hosts (a live `(make-catalogue :llm)` or a blackboard) are where you `register-capability` / `get-capability` / `capability-supported-p`. `:world` = compute/edit/vcs/search/comms. `:llm` = generation + modalities (no provider types here).
 
