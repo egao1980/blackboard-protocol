@@ -25,19 +25,8 @@ jobs:
       contents: read
       packages: write
 
-  # Colocated; canned publish.lisp forces provides=(system). Extra jobs so
-  # cl-repo:load-system resolves capability-protocol and /journal.
-  publish-journal:
-    needs: publish-blackboard
-    uses: egao1980/cl-repository/.github/workflows/publish-source.yml@main
-    with:
-      system: blackboard-protocol/journal
-      version: ${{ inputs.version }}
-      packager-version: ${{ inputs.packager_version }}
-    permissions:
-      contents: read
-      packages: write
-
+  # Colocated; canned publish.lisp forces provides=(system). Second package
+  # so cl-repo:load-system "capability-protocol" resolves.
   publish-capability:
     needs: publish-blackboard
     uses: egao1980/cl-repository/.github/workflows/publish-source.yml@main
