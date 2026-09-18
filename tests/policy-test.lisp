@@ -38,6 +38,7 @@
          (path (with-policy-chain chain
                  (handler-bind ((policy-denied
                                  (lambda (c)
+                                   (declare (ignore c))
                                    (invoke-restart 'continue))))
                    (invoke-operation cap 'write-file "a" "hi")))))
     (ok (equal "a" path))
