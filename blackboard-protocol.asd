@@ -30,6 +30,7 @@
                (:file "ks-test")
                (:file "capability-package")
                (:file "capability-test")
+               (:file "policy-test")
                (:file "coding-agent-test"))
   :perform (test-op (o c)
              (unless (symbol-call :rove :run c)

@@ -1,23 +1,26 @@
 (in-package #:capability-protocol)
 
 (defun parse-operation (op-form)
-  (destructuring-bind (op-tag op-name params &key returns (doc "")) op-form
+  (destructuring-bind (op-tag op-name params &key returns (doc "")
+                               (effect-class :unknown))
+      op-form
     (declare (ignore op-tag))
     (let ((clean-params (remove-if (lambda (p)
                                      (and (symbolp p)
                                           (string= "&KEY" (symbol-name p))))
                                    params)))
-      (values op-name clean-params returns doc))))
+      (values op-name clean-params returns doc effect-class))))
 
 (defmacro defcapability (name doc &body operations)
   "Define a capability class and operation generic functions.
-NAME is a keyword. OPERATIONS: (:operation op-name (params...) &key returns doc)."
+NAME is a keyword. OPERATIONS: (:operation op-name (params...) &key returns doc effect-class)."
   (let* ((class-name (intern (format nil "~A-CAPABILITY"
                                     (string-upcase (symbol-name name)))))
          (gen-forms nil)
          (desc-forms nil))
     (dolist (op operations)
-      (multiple-value-bind (op-name params returns op-doc) (parse-operation op)
+      (multiple-value-bind (op-name params returns op-doc effect-class)
+          (parse-operation op)
         (let ((param-names (mapcar (lambda (p) (if (listp p) (car p) p)) params)))
           (push `(defgeneric ,op-name (cap ,@param-names &key)
                    (:documentation ,op-doc))
@@ -26,7 +29,8 @@ NAME is a keyword. OPERATIONS: (:operation op-name (params...) &key returns doc)
                   :name ',op-name
                   :params ',params
                   :returns ',returns
-                  :doc ,op-doc)
+                  :doc ,op-doc
+                  :effect-class ,effect-class)
                 desc-forms))))
     `(progn
        (defclass ,class-name (capability)

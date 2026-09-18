@@ -12,11 +12,23 @@
   (name nil)
   (params nil)
   (returns nil)
-  (doc "" :type string))
+  (doc "" :type string)
+  (effect-class :unknown))
+
+(defgeneric operation-effect-class (cap op-name)
+  (:documentation "Effect class for OP-NAME on CAP (keyword or class; default :UNKNOWN).
+Interceptors switch on this — model / tool / retrieval / ingest / promotion.")
+  (:method ((cap capability) op-name)
+    (let ((desc (find op-name (capability-operations cap)
+                      :key #'capability-operation-name)))
+      (if desc
+          (capability-operation-effect-class desc)
+          :unknown))))
 
 (defgeneric invoke-operation (cap op-name &rest args)
   (:documentation "Portable dynamic dispatch: look up OP-NAME as a GF and apply.
-No SBCL eql-specializer / find-method."))
+No SBCL eql-specializer / find-method. This GF is the only public invocation
+path — policy interceptors wrap it via *POLICY-CHAIN*."))
 
 (defmethod invoke-operation ((cap capability) op-name &rest args)
   (let ((fn (and (symbolp op-name)
