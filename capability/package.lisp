@@ -34,6 +34,48 @@
    #:capability-operation-returns
    #:capability-operation-doc
    #:invoke-operation
+   #:operation-effect-class
+   #:capability-operation-effect-class
+
+   ;; policy interceptors (R1) — invoke-operation is the only public path
+   #:interceptor
+   #:interceptor-name
+   #:interceptor-pre
+   #:interceptor-post
+   #:functional-interceptor
+   #:make-interceptor
+   #:operation-invocation
+   #:invocation-capability
+   #:invocation-operation
+   #:invocation-args
+   #:invocation-effect-class
+   #:invocation-decisions
+   #:invocation-retry-count
+   #:policy-chain
+   #:*policy-chain*
+   #:make-policy-chain
+   #:policy-chain-interceptors
+   #:policy-chain-mode
+   #:policy-chain-log
+   #:add-interceptor
+   #:with-policy-chain
+   #:policy-decision
+   #:make-decision
+   #:decision-kind
+   #:decision-reason
+   #:decision-value
+   #:decision-args
+   #:decision-interceptor
+   #:policy-denied
+   #:policy-denied-invocation
+   #:policy-denied-decision
+   #:policy-denied-reason
+   #:policy-ask
+   #:policy-ask-invocation
+   #:policy-ask-decision
+   #:policy-ask-prompt
+   #:invoke-decline
+
    #:register-capability
    #:unregister-capability
    #:get-capability
