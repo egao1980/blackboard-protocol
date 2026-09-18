@@ -198,6 +198,22 @@
     (ok blocked)
     (ok (null (gethash "a" (mock-files cap))))))
 
+(deftest retry-reinvokes-operation
+  (let* ((runs 0)
+         (cap (make-instance 'mock-fs))
+         (i (make-interceptor
+             :name :retry-once
+             :post (lambda (inv result)
+                     (declare (ignore result))
+                     (incf runs)
+                     (when (< (invocation-retry-count inv) 1)
+                       (make-decision :retry :reason "once")))))
+         (chain (make-policy-chain :interceptors (list i))))
+    (with-policy-chain chain
+      (ok (equal "a" (invoke-operation cap 'write-file "a" "x"))))
+    (ok (eql 2 runs))
+    (ok (equal "x" (gethash "a" (mock-files cap))))))
+
 (deftest cache-skips-operation
   (let* ((i (make-interceptor
              :name :cache

@@ -212,10 +212,10 @@
                  (funcall apply-fn)
                  (let ((interceptor (first remaining))
                        (rest (rest remaining)))
-                   (flet ((proceed ()
-                            (let ((result (run rest)))
-                              (%run-post chain interceptor invocation result
-                                         (lambda () (proceed))))))
+                   (labels ((proceed ()
+                              (let ((result (run rest)))
+                                (%run-post chain interceptor invocation result
+                                           #'proceed))))
                      (%run-pre chain interceptor invocation #'proceed))))))
     (run (policy-chain-interceptors chain))))
 
