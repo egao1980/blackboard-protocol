@@ -215,6 +215,78 @@
     (ok (eql 2 runs))
     (ok (equal "x" (gethash "a" (mock-files cap))))))
 
+(deftest decision-interceptor-p-cuts
+  (let* ((journal nil)
+         (i (make-decision-interceptor
+             :question-id :risk
+             :outcome-key t
+             :deny-at 0.8
+             :ask-at 0.4
+             :lookup (lambda (inv)
+                       (declare (ignore inv))
+                       (values '((t . 0.91) (nil . 0.09)) "kev-4b"))
+             :on-decide (lambda (&rest args)
+                          (push args journal))))
+         (chain (make-policy-chain :interceptors (list i)))
+         (cap (make-instance 'mock-fs)))
+    (with-policy-chain chain
+      (ok (signals (invoke-operation cap 'write-file "a" "x")
+                   'policy-denied)))
+    (ok (null (gethash "a" (mock-files cap))))
+    (ok (eq :deny (getf (first journal) :kind)))
+    (ok (equal "kev-4b" (getf (first journal) :model)))
+    (ok (numberp (getf (first journal) :probability)))))
+
+(deftest decision-interceptor-ask-band
+  (let* ((i (make-decision-interceptor
+             :outcome-key t
+             :deny-at 0.9
+             :ask-at 0.4
+             :lookup (lambda (inv)
+                       (declare (ignore inv))
+                       '((t . 0.55) (nil . 0.45)))))
+         (chain (make-policy-chain :interceptors (list i)))
+         (cap (make-instance 'mock-fs)))
+    (with-policy-chain chain
+      (ok (equal "a" (invoke-operation cap 'write-file "a" "ok"))))
+    (ok (find :ask (policy-chain-log chain) :key #'decision-kind))))
+
+(deftest decision-interceptor-allow-low-p
+  (let* ((i (make-decision-interceptor
+             :outcome-key t
+             :deny-at 0.8
+             :ask-at 0.5
+             :lookup (lambda (inv)
+                       (declare (ignore inv))
+                       '((t . 0.12) (nil . 0.88)))))
+         (chain (make-policy-chain :interceptors (list i)))
+         (cap (make-instance 'mock-fs)))
+    (with-policy-chain chain
+      (ok (equal "a" (invoke-operation cap 'write-file "a" "ok"))))
+    (ok (equal "ok" (gethash "a" (mock-files cap))))
+    (ok (find :allow (policy-chain-log chain) :key #'decision-kind))))
+
+(deftest decision-interceptor-uses-mass-not-concentration
+  "Gates consume P(outcome). Concentration above uniform is not an input."
+  (let* ((;; peaky wrong distribution: p(t)=0.4, rest split — concentration is high
+          mass '((t . 0.40) (a . 0.30) (b . 0.30)))
+         (i (make-decision-interceptor
+             :outcome-key t
+             :deny-at 0.8
+             :lookup (lambda (inv)
+                       (declare (ignore inv))
+                       mass)))
+         (k (length mass))
+         (pmax 0.40)
+         (concentration (/ (- pmax (/ 1 k)) (- 1 (/ 1 k))))
+         (chain (make-policy-chain :interceptors (list i)))
+         (cap (make-instance 'mock-fs)))
+    (ok (> concentration 0.05))
+    (with-policy-chain chain
+      (ok (equal "a" (invoke-operation cap 'write-file "a" "x"))))
+    (ok (find :allow (policy-chain-log chain) :key #'decision-kind))
+    (ok (null (find :deny (policy-chain-log chain) :key #'decision-kind)))))
+
 (deftest cache-skips-operation
   (let* ((i (make-interceptor
              :name :cache

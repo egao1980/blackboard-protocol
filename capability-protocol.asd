@@ -10,6 +10,7 @@
                (:file "conditions")
                (:file "protocol")
                (:file "policy")
+               (:file "decision-policy")
                (:file "macros")
                (:file "domains"))
   :in-order-to ((test-op (test-op "capability-protocol/tests"))))
