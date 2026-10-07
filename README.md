@@ -36,6 +36,12 @@ OCI: `ghcr.io/egao1980/cl-systems/blackboard-protocol:0.2.2` · `capability-prot
 
 Policy: bind `*policy-chain*` around `invoke-operation` (ordered pre/post interceptors; `log-only` → `enforce`). That GF is the only public invocation path.
 
+`decision-interceptor` thresholds on a named outcome probability, never Jev/Kev concentration. Offline demo:
+
+```bash
+sbcl --load examples/decision-interceptor.lisp
+```
+
 Catalogues (`defcatalogue`) are the vocabulary. Hosts (a live `(make-catalogue :llm)` or a blackboard) are where you `register-capability` / `get-capability` / `capability-supported-p`. `:world` = compute/edit/vcs/search/comms. `:llm` = generation + modalities (no provider types here).
 
 ## License

@@ -10,6 +10,7 @@
                (:file "conditions")
                (:file "protocol")
                (:file "policy")
+               (:file "decision-policy")
                (:file "macros")
                (:file "domains"))
   :in-order-to ((test-op (test-op "capability-protocol/tests"))))
@@ -20,7 +21,8 @@
   :serial t
   :components ((:file "capability-package")
                (:file "capability-test")
-               (:file "policy-test"))
+               (:file "policy-test")
+               (:file "demo-test"))
   :perform (test-op (o c)
              (unless (symbol-call :rove :run c)
                (error "tests failed for ~A" (component-name c)))))

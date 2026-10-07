@@ -75,6 +75,15 @@
    #:policy-ask-decision
    #:policy-ask-prompt
    #:invoke-decline
+   #:decision-interceptor
+   #:make-decision-interceptor
+   #:decision-interceptor-question-id
+   #:decision-interceptor-outcome-key
+   #:decision-interceptor-lookup
+   #:decision-interceptor-deny-at
+   #:decision-interceptor-ask-at
+   #:decision-interceptor-on-decide
+   #:mass-probability
 
    #:register-capability
    #:unregister-capability
