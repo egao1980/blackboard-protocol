@@ -1,5 +1,5 @@
 (defsystem "capability-protocol"
-  :version "0.2.3"
+  :version "0.3.0"
   :description "CLOS capability protocol: defcapability / defcatalogue + policy interceptors"
   :author "egao1980"
   :license "MIT"

@@ -121,6 +121,7 @@
    #:llm-structured-output-capability
    #:llm-responses-capability
    #:llm-embeddings-capability
+   #:llm-compaction-capability
    #:run-command
    #:read-file
    #:write-file
@@ -132,6 +133,7 @@
    #:upload-file
    #:synthesize
    #:transcribe
-   #:embed))
+   #:embed
+   #:compact))
 
 (in-package #:capability-protocol)
