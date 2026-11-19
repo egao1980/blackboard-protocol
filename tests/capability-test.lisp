@@ -56,6 +56,7 @@
   (ok (catalogue-defines-p :llm :llm-vision))
   (ok (catalogue-defines-p :llm :llm-generation))
   (ok (catalogue-defines-p :llm :llm-embeddings))
+  (ok (catalogue-defines-p :llm :llm-compaction))
   (ok (catalogue-defines-p :world :compute))
   (ng (catalogue-defines-p :llm :compute))
   (ng (catalogue-defines-p :world :llm-vision))

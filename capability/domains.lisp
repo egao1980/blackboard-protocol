@@ -49,6 +49,10 @@
 
 (defcapability :llm-responses "Responses-style respond (items, not chat turns).")
 
+(defcapability :llm-compaction "Provider-side conversation compaction (a summary the provider writes)."
+  (:operation compact ((turns t)) :returns t
+   :doc "Summarize TURNS on the provider. → (values new-turns compacted-p)."))
+
 (defcapability :llm-embeddings "Text embeddings (adapter implements)."
   (:operation embed ((inputs t)) :returns t
    :doc "Embed INPUTS (string or sequence of strings)."))
@@ -61,4 +65,4 @@
     "LLM generation and modalities. Adapter registers the subset the backend implements."
   :llm-generation :llm-tools :llm-vision :llm-audio :llm-video :llm-files
   :llm-speech :llm-transcription :llm-thinking :llm-structured-output
-  :llm-responses :llm-embeddings)
+  :llm-responses :llm-embeddings :llm-compaction)
